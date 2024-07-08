@@ -47,9 +47,34 @@ class PlantByID(Resource):
         plant = Plant.query.filter_by(id=id).first().to_dict()
         return make_response(jsonify(plant), 200)
 
+    def patch(self, id):
+        plant = Plant.query.get(id)
+        if not plant:
+            return make_response(jsonify({"error": "Plant not found"}), 404)
+        
+        data = request.get_json()
+        try:
+            if 'is_in_stock' in data:
+                plant.is_in_stock = data['is_in_stock']
+            db.session.commit()
+            return make_response(jsonify(plant.to_dict()), 200)
+        except IntegrityError:
+            db.session.rollback()
+            return make_response(jsonify({"error": "Invalid data"}), 400)
+
+    def delete(self, id):
+        plant = Plant.query.get(id)
+        if not plant:
+            return make_response(jsonify({"error": "Plant not found"}), 404)
+        
+        db.session.delete(plant)
+        db.session.commit()
+        return make_response('', 204)
+
 
 api.add_resource(PlantByID, '/plants/<int:id>')
 
 
 if __name__ == '__main__':
     app.run(port=5555, debug=True)
+
